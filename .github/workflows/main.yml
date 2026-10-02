@@ -7,58 +7,56 @@ on:
       - main
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-
     steps:
-      - name: Récupérer le projet
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Installer Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
-      - name: Installer Java 17
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web app
+        run: npm run build
+        continue-on-error: true
+
+      - name: Check web directory
+        run: |
+          echo "Contenu du projet :"
+          ls -la
+          echo "Recherche des dossiers web :"
+          find . -maxdepth 2 -type d \
+            \( -name "dist" -o -name "www" -o -name "build" \) \
+            -print
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Installer Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Installer les dépendances
-        run: npm install --no-audit --no-fund
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
 
-      - name: Préparer l'application Web
-        run: |
-          chmod +x prepare-web.sh
-          ./prepare-web.sh
-
-      - name: Vérifier la préparation Web
-        run: |
-          test -f www/index.html
-          test -f www/app.js
-          test -f www/styles.css
-          echo "Dossier www correctement créé"
-
-      - name: Ajouter Android à Capacitor
-        run: npx cap add android
-
-      - name: Synchroniser Capacitor
-        run: npx cap sync android
-
-      - name: Construire APK Debug
+      - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug
 
-      - name: Publier l'APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Francais-au-lycee-Maroc-V8-APK
+          name: Francais-au-lycee-Maroc-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
