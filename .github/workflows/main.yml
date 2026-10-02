@@ -1,60 +1,22 @@
-name: Build Android APK
+name: Build APK
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: Create APK folder
+        run: mkdir -p apk
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build web app
-        run: npm run build
-
-      - name: Check web directory
-        run: |
-          echo "Contenu du projet :"
-          ls -la
-          echo "Recherche des dossiers web :"
-          find . -maxdepth 2 -type d \
-            \( -name "dist" -o -name "www" -o -name "build" \) \
-            -print
-
-      - name: Sync Capacitor
-        run: npx cap sync android
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Make Gradle executable
-        run: chmod +x android/gradlew
-
-      - name: Build APK
-        working-directory: android
-        run: ./gradlew assembleDebug
-
-      - name: Upload APK
+      - name: Upload files
         uses: actions/upload-artifact@v4
         with:
-          name: application-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: web-files
+          path: .
